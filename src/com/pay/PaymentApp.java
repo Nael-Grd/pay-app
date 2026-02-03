@@ -77,7 +77,22 @@ public class PaymentApp extends Application {
         );
         paymentModeBox.setPromptText("Mode de paiement");
 
+        TextField emailField = new TextField();
+        emailField.setPromptText("Email PayPal");
+        TextField cardField = new TextField();
+        cardField.setPromptText("Numéro de carte (16 chiffres)");
+
         Button confirmButton = new Button("Confirmer le paiement");
+
+        paymentModeBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            vbox.getChildren().removeAll(emailField, cardField); // On nettoie d'abord
+            if ("Paypal".equals(newVal)) {
+                vbox.getChildren().add(vbox.getChildren().indexOf(confirmButton), emailField);
+            } 
+            else if ("Carte bancaire".equals(newVal)) {
+                vbox.getChildren().add(vbox.getChildren().indexOf(confirmButton), cardField);
+            }
+        });
 
         confirmButton.setOnAction(e -> {
             try {
@@ -89,8 +104,11 @@ public class PaymentApp extends Application {
                 if ("Paypal".equals(paymentModeString)) {
                     api = new PaypalAPI();
                 } 
-                else {
+                else if ("Carte bancaire".equals(paymentModeString)) {
                     api = new CreditCardAPI();
+                }
+                else if (paymentModeString == null) {
+                    throw new PaymentException("Veuillez sélectionner un mode de paiement.");
                 }
 
                 Order order; 
@@ -99,6 +117,19 @@ public class PaymentApp extends Application {
                 }   
                 else { 
                     order = new MobileOrder(api); 
+                }
+
+                if ("Paypal".equals(paymentModeString)) {
+                    String email = emailField.getText();
+                    if (email.isEmpty() || !email.contains("@") || !email.contains(".")) {
+                        throw new PaymentException("Erreur : Veuillez entrer un email PayPal valide (ex: nom@mail.com).");
+                    }
+                }
+                else if ("Carte bancaire".equals(paymentModeString)) {
+                    String cardNum = cardField.getText();
+                    if (cardNum.length() != 16 || !cardNum.matches("\\d+")) {
+                        throw new PaymentException("Erreur : Le numéro de carte doit contenir exactement 16 chiffres.");
+                    }
                 }
 
                 PaymentRequest request = new PaymentRequest(amount, currency);
