@@ -26,7 +26,44 @@ public class PaymentApp extends Application {
 
     public void start(Stage primaryStage) {
 
-        Label titlLabel = new Label("Application de paiement");
+        afficherMenu(primaryStage);
+    }
+
+    public void afficherMenu(Stage primaryStage) {
+        Button webInterface = new Button("Interface Web");
+        Button mobileInterface = new Button("Interface Mobile");
+
+        VBox menu = new VBox();
+        menu.setSpacing(15);
+        menu.setAlignment(Pos.CENTER);
+        menu.setPadding(new Insets(20));
+        menu.getChildren().addAll(webInterface, mobileInterface);
+
+        webInterface.setOnAction(e -> { afficherFormulaire(primaryStage, "WEB"); });
+
+        mobileInterface.setOnAction(e -> { afficherFormulaire(primaryStage, "MOBILE");  });
+
+        Scene scene = new Scene(menu, 400, 400);
+        primaryStage.setTitle("Stage");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    public void afficherFormulaire(Stage primaryStage, String platform) {
+        VBox vbox = new VBox();
+        vbox.setSpacing(15);
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setPadding(new Insets(30));
+
+        if ("MOBILE".equals(platform)) {
+            primaryStage.setTitle("Paiement Mobile");
+            vbox.setStyle("-fx-background-color: #e3f2fd;"); 
+        } else {
+            primaryStage.setTitle("Portail Paiement Web");
+            vbox.setStyle("-fx-background-color: #ffffff;"); 
+        }
+
+        Label titlLabel = new Label("Interface de paiement");
 
         TextField amounTextField = new TextField();  // pour le montant
         amounTextField.setPromptText("0.00");     // texte indicatif en gris à l'intérieur
@@ -42,18 +79,6 @@ public class PaymentApp extends Application {
 
         Button confirmButton = new Button("Confirmer le paiement");
 
-        VBox vbox = new VBox();
-        vbox.setSpacing(15);
-        vbox.setAlignment(Pos.CENTER);
-        vbox.setPadding(new Insets(20));
-        vbox.getChildren().addAll(titlLabel, amounTextField, currencyBox, paymentModeBox, confirmButton);
-
-        Scene scene = new Scene(vbox, 400, 400);
-        primaryStage.setTitle("Stage");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-
-
         confirmButton.setOnAction(e -> {
             try {
                 double amount = Double.parseDouble(amounTextField.getText());   // on récupère le montant
@@ -68,9 +93,16 @@ public class PaymentApp extends Application {
                     api = new CreditCardAPI();
                 }
 
-                WebOrder web = new WebOrder(api);
+                Order order; 
+                if ("WEB".equals(platform)) { 
+                    order = new WebOrder(api);
+                }   
+                else { 
+                    order = new MobileOrder(api); 
+                }
+
                 PaymentRequest request = new PaymentRequest(amount, currency);
-                web.checkout(request);
+                order.checkout(request);
                 
                 Alert success = new Alert(AlertType.INFORMATION);
                 success.setTitle("Paiement réussi");
@@ -88,6 +120,20 @@ public class PaymentApp extends Application {
                 new Alert(AlertType.ERROR, "Une erreur est survenue : " + ex.getMessage()).showAndWait();
             }
         });
+
+        Button backButton = new Button("Retour");
+        backButton.setOnAction(e -> { afficherMenu(primaryStage);});
+
+        vbox.setSpacing(15);
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setPadding(new Insets(20));
+        vbox.getChildren().addAll(titlLabel, amounTextField, currencyBox, paymentModeBox, confirmButton, backButton);
+
+        double width = "MOBILE".equals(platform) ? 350 : 600;
+        double height = "MOBILE".equals(platform) ? 600 : 400;
+        Scene scene = new Scene(vbox, width, height);
+        primaryStage.setScene(scene);
+        primaryStage.show();    
     }
 
     public static void main(String[] args) {
@@ -97,5 +143,6 @@ public class PaymentApp extends Application {
 }
     
 
-// --module-path /usr/share/openjfx/lib --add-modules javafx.controls -d bin src/com/pay/model/*.java src/com/pay/abstraction/*.java src/com/pay/implementation/*.java src/com/pay/exception/*.java src/com/pay/PaymentApp.java
-// --module-path /usr/share/openjfx/lib --add-modules javafx.controls -cp bin com.pay.PaymentApp
+// javac --module-path /usr/share/openjfx/lib --add-modules javafx.controls -d bin src/com/pay/model/*.java src/com/pay/abstraction/*.java src/com/pay/implementation/*.java src/com/pay/exception/*.java src/com/pay/PaymentApp.java
+
+// java --module-path /usr/share/openjfx/lib --add-modules javafx.controls -cp bin com.pay.PaymentApp

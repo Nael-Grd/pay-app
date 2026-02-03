@@ -12,5 +12,5 @@ public abstract class Order {
         this.paymentMode = paymentMode;
     }
 
-    abstract void checkout(PaymentRequest payment) throws PaymentException;
+    public abstract void checkout(PaymentRequest payment) throws PaymentException;
 }
